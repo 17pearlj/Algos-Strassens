@@ -73,7 +73,7 @@ void printMatrices(int **matrix, int dim){
 void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive){
     for(int r = 0; r < dim; r++){
 		for (int c = 0; c < dim; c++){
-            three[r][c] = one[r + r1][c + c1] + (two[r + r1][c + c1]*positive);
+            three[r][c] = one[r + r1][c + c1] + (two[r + r2][c + c2]*positive);
 		}
 	}
     
