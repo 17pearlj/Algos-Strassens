@@ -4,6 +4,7 @@
 #include <string.h>
 #include "matrix.c"
 
+int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 
 int main(int argc, char** argv) {
@@ -24,7 +25,7 @@ int main(int argc, char** argv) {
    int dim = atoi(argv[2]);
    printf("%i \n", dim);
    char ch, buffer[10];
-   int **one = (int **)calloc(dim, sizeof(int *)); 
+   int **one = (int **)calloc(dim, sizeof(int *));
    int **two = (int **)calloc(dim, sizeof(int *));
    int **three = (int **)calloc(dim, sizeof(int *));
    for (int i = 0; i < dim; i++){
@@ -36,6 +37,7 @@ int main(int argc, char** argv) {
    printf("\n \n");
 
    printf("\n \n");
+   //standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
    strassen(one, two, three, 0, 0, 0, 0, 0, 0, dim);
    printMatrices(three, dim);
    for (int i = 0; i < dim; i ++){
@@ -44,7 +46,7 @@ int main(int argc, char** argv) {
       free(three[i]);
    }
 
-   free(one); 
+   free(one);
    free(two);
    free(three);
    return 0;
@@ -54,7 +56,7 @@ int main(int argc, char** argv) {
 
 
 /*big multiplication algorithm
-RETURNS: a list of diagonal entries 
+RETURNS: a list of diagonal entries
 tasks:
 1) turn file into matrix form (if necessary? is this necessary?)
 2) based on n, either call strassens or call standard mult
@@ -64,13 +66,60 @@ int big_mult(){
 		return 0;
 }
 
-/*standard matrix multiplication 
+/*standard matrix multiplication
 RETURNS: ?
 tasks:
-1) perform mult -> recursively call itself? or refer to big_mult
+1) perform standard mult
 */
 int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim){
 
+    // we need to make copies of the matrices so we can line up the indices
+    int **temp1 = (int **)calloc(dim, sizeof(int *));
+    int **temp2 = (int **)calloc(dim, sizeof(int *));
+    int **temp3 = (int **)calloc(dim, sizeof(int *));
+    for (int i = 0; i < dim; i++) {
+       temp1[i] = (int *)calloc(dim, sizeof(int));
+       temp2[i] = (int *)calloc(dim, sizeof(int));
+       temp3[i] = (int *)calloc(dim, sizeof(int));
+    }
+
+    // make 0-indexed copies of matrices one and two
+    for (int i = r1; i < r1 + dim; i++) {
+        for (int j = c1; j < c1 + dim; j++) {
+            temp1[i - r1][j - c1] = one[i][j];
+        }
+    }
+    for (int i = r2; i < r2 + dim; i++) {
+        for (int j = c2; j < c2 + dim; j++) {
+            temp2[i - r2][j - c2] = two[i][j];
+        }
+    }
+
+    // multiply using the 0-indexed copies
+    for (int i = 0; i < dim; i++) {
+        for (int j = 0; j < dim; j++) {
+            for (int k = 0; k < dim; k++) {
+                temp3[i][j] += (temp1[i][k] * temp2[k][j]);
+            }
+        }
+    }
+
+    // copy the product into matrix 3 at the appropriate indices
+    for (int i = 0; i < dim; i++) {
+        for (int j = 0; j < dim; j++) {
+            three[i + r3][j + c3] = temp3[i][j];
+        }
+    }
+
+    // free our temporary 0-indexed copies
+    for (int i = 0; i < dim; i ++){
+       free(temp1[i]);
+       free(temp2[i]);
+       free(temp3[i]);
+    }
+    free(temp1);
+    free(temp2);
+    free(temp3);
 }
 
 
@@ -89,7 +138,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       // actually multiply & add to three
       int a = one[r1][c1], b = one[r1][c1 + 1], c = one[r1 + 1][c1], d = one[r1 + 1][c1 + 1];
       int e = two[r2][c2], f = two[r2][c2 + 1], g = two[r2 + 1][c2], h = two[r2 + 1][c2 + 1];
-      int p1 = a*(f - h); 
+      int p1 = a*(f - h);
       int p2 = (a + b)*h;
       int p3 = (c + d)*e;
       int p4 = d*(g - e);
@@ -118,11 +167,11 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
             case 1: // a + b
                matrixDestinationAddition(one, r1, c1, one, r1, c1 + new_d, sums[i], new_d, 1);
                break;
-            
+
             case 2: //c + d
                matrixDestinationAddition(one, r1 + new_d, c1, one, r1 + new_d, c1 + new_d, sums[i], new_d, 1);
                break;
-            
+
             case 3: //g - e
                matrixDestinationAddition(two, r2 + new_d, c2, two, r2, c2, sums[i], new_d, -1);
                break;
@@ -150,7 +199,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
             default: //e + f
                matrixDestinationAddition(two, r2, c2, two, r2, c2 + new_d, sums[i], new_d, 1);
                break;
-         }  
+         }
       }
       int ***p = (int ***)calloc(7, sizeof(int**));
       for (int i = 0; i < 7; i++){
@@ -159,13 +208,13 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
             p[i][j] = (int *)calloc(new_d, sizeof(int));
          }
       }
-      p[0] = strassen(one, sums[0], p[0], r1, c1, 0, 0, 0, 0, new_d); 
-      p[1] = strassen(sums[1], two, p[1], 0, 0, r2 + new_d, c2 + new_d, 0, 0, new_d); 
-      p[2] = strassen(sums[2], two, p[2], 0, 0, r2, c2, 0, 0, new_d); 
-      p[3] = strassen(one, sums[3], p[3], r1 + new_d, c1 + new_d, 0, 0, 0, 0, new_d); 
-      p[4] = strassen(sums[4], sums[5], p[4], 0, 0, 0, 0, 0, 0, new_d); 
-      p[5] = strassen(sums[6], sums[7], p[5], 0, 0, 0, 0, 0, 0, new_d); 
-      p[6] = strassen(sums[8], sums[9], p[6], 0, 0, 0, 0, 0, 0, new_d); 
+      p[0] = strassen(one, sums[0], p[0], r1, c1, 0, 0, 0, 0, new_d);
+      p[1] = strassen(sums[1], two, p[1], 0, 0, r2 + new_d, c2 + new_d, 0, 0, new_d);
+      p[2] = strassen(sums[2], two, p[2], 0, 0, r2, c2, 0, 0, new_d);
+      p[3] = strassen(one, sums[3], p[3], r1 + new_d, c1 + new_d, 0, 0, 0, 0, new_d);
+      p[4] = strassen(sums[4], sums[5], p[4], 0, 0, 0, 0, 0, 0, new_d);
+      p[5] = strassen(sums[6], sums[7], p[5], 0, 0, 0, 0, 0, 0, new_d);
+      p[6] = strassen(sums[8], sums[9], p[6], 0, 0, 0, 0, 0, 0, new_d);
       matrixThirdsAddition(4, 3, 1, 5, 1, 1, -1, 1, p, 7, three, r3, c3, new_d);
       matrixThirdsAddition(0, 1, -1, -1, 1, 1, 1, 1, p, 7, three, r3, c3 + new_d, new_d);
       matrixThirdsAddition(2, 3, -1, -1, 1, 1, 1, 1, p, 7, three, r3 + new_d, c3, new_d);
@@ -173,7 +222,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       for (int i = 0; i < 10; i++){
          for (int j = 0; j < new_d; j++){
                free(sums[i][j]);
-         } 
+         }
          free(sums[i]);
       }
       free(sums);
@@ -188,7 +237,3 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 
    }
 }
-
-
-
-
