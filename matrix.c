@@ -6,12 +6,12 @@
 #include <stdbool.h>
 
 void printMatrices(int **matrix, int dim);
-// void matrixAddition(int **one, int **two, int dim, int positive);
 void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive);
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two);
-// int** matrixThirdAddition(int **one, int **two, int **third, int dim, int positive);
 int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim);
 void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positive);
+
+
 
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two){
 	char ch, buffer[10];
@@ -52,14 +52,13 @@ int makeTwoMatrices(FILE *f, int dim, int** one, int** two){
 		}
 	}
 	
-	printMatrices(one, dim);
-    printf("\n \n");
-	printMatrices(two, dim);
 	return 0;
 
 }
 
+
 void printMatrices(int **matrix, int dim){
+	printf("\n");
     for(int r = 0; r < dim; r++){
       printf("[ ");
 		for (int c = 0; c < dim; c++){
@@ -69,7 +68,6 @@ void printMatrices(int **matrix, int dim){
 	}
 }
 
-
 void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive){
     for(int r = 0; r < dim; r++){
 		for (int c = 0; c < dim; c++){
@@ -78,6 +76,8 @@ void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int
 	}
     
 }
+
+
 
 int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim){
     for (int i = 0; i < p_len; i++){
