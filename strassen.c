@@ -321,31 +321,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 
 int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
    int new_d = dim/2;
-   if (new_d == 1){
-      // actually multiply & add to three
-      if (r1 >= real_dim || c1 >= real_dim || r2 >= real_dim || c2 >= real_dim){
-         three[r3][c3] = 0;
-         three[r3][c3 + 1]= 0;
-         three[r3 + 1][c3] = 0;
-         three[r3 + 1][c3 + 1] = 0;
-      } else {
-         int a = one[r1][c1], b = one[r1][c1 + 1], c = one[r1 + 1][c1], d = one[r1 + 1][c1 + 1];
-         int e = two[r2][c2], f = two[r2][c2 + 1], g = two[r2 + 1][c2], h = two[r2 + 1][c2 + 1];
-         int p1 = a*(f - h);
-         int p2 = (a + b)*h;
-         int p3 = (c + d)*e;
-         int p4 = d*(g - e);
-         int p5 = (a + d)*(e + h);
-         int p6 = (b - d)*(g + h);
-         int p7 = (a - c)*(e + f);
-         three[r3][c3] = p5 + p4 - p2 + p6;
-         three[r3][c3 + 1]= p1 + p2;
-         three[r3 + 1][c3] = p3 + p4;
-         three[r3 + 1][c3 + 1] = p1 + p5 - p3 - p7;
-      }
-      return three;
-   } else {
-
+   if (new_d != 1) {
       int ***sums = (int***)calloc(2, sizeof(int**));
       for (int i = 0; i < 2; i++){
          sums[i] = (int **)calloc(new_d, sizeof(int*));
@@ -454,6 +430,29 @@ int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int
       }
       free(p);
       
+      return three;
+   } else {
+      // actually multiply & add to three
+      if (r1 >= real_dim || c1 >= real_dim || r2 >= real_dim || c2 >= real_dim){
+         three[r3][c3] = 0;
+         three[r3][c3 + 1]= 0;
+         three[r3 + 1][c3] = 0;
+         three[r3 + 1][c3 + 1] = 0;
+      } else {
+         int a = one[r1][c1], b = one[r1][c1 + 1], c = one[r1 + 1][c1], d = one[r1 + 1][c1 + 1];
+         int e = two[r2][c2], f = two[r2][c2 + 1], g = two[r2 + 1][c2], h = two[r2 + 1][c2 + 1];
+         int p1 = a*(f - h);
+         int p2 = (a + b)*h;
+         int p3 = (c + d)*e;
+         int p4 = d*(g - e);
+         int p5 = (a + d)*(e + h);
+         int p6 = (b - d)*(g + h);
+         int p7 = (a - c)*(e + f);
+         three[r3][c3] = p5 + p4 - p2 + p6;
+         three[r3][c3 + 1]= p1 + p2;
+         three[r3 + 1][c3] = p3 + p4;
+         three[r3 + 1][c3 + 1] = p1 + p5 - p3 - p7;
+      }
       return three;
    }
 }   
