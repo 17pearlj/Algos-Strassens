@@ -40,15 +40,15 @@ int main(int argc, char** argv) {
    clock_t start, end;
    
    start = clock();
-   big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
+   // big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    // strassen(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
-   // standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
    end = clock();
    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
    
    // printMatrices(three, pad_dim);
-   diagonals(three, dim);
+   // diagonals(three, dim);
    printf("TIME :%f \n", cpu_time_used);
    for (int i = 0; i < pad_dim; i ++){
       free(one[i]);
@@ -81,7 +81,6 @@ tasks:
 
 int** big_mult_onlyStrassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
    // check dimensions, if under crossover point, call standard, else call strassens
-   // return strassen(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
    return strassenOpt(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
 }
 
@@ -91,7 +90,7 @@ int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return one;
    } else if (r2 >= real_dim || c2 >= real_dim){
       return two;
-   } else if (dim < 23){
+   } else if (dim < 70){
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassenOpt(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
@@ -159,12 +158,143 @@ int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, i
 
 
 /*strassens algorithm
-RETURNS: ?
+RETURNS: int**
 tasks:
 1) add necessary padding so that it's of a dimension that's a power of two
 2) perform strassens -> recursive call to big_mult in it
 3) in strassen, add each term to the correct part of the third and final matrix
 */
+int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
+   int new_d = dim/2;
+   if (new_d == 1) {
+      three[r3][c3 + 1] +=  (one[r1][c1])*(two[r2][c2 + 1] - two[r2 + 1][c2 + 1]);
+      three[r3 + 1][c3 + 1] += (one[r1][c1])*(two[r2][c2 + 1] - two[r2 + 1][c2 + 1]);
+      three[r3][c3 + 1] += (one[r1][c1] + one[r1][c1 + 1])*(two[r2 + 1][c2 + 1]);
+      three[r3][c3] -= (one[r1][c1] + one[r1][c1 + 1])*(two[r2 + 1][c2 + 1]);
+      three[r3 + 1][c3] += (one[r1 + 1][c1] + one[r1 + 1][c1 + 1])*(two[r2][c2]);
+      three[r3 + 1][c3 + 1] -= (one[r1 + 1][c1] + one[r1 + 1][c1 + 1])*(two[r2][c2]);
+      three[r3][c3] += (one[r1 + 1][c1 + 1])*(two[r2 + 1][c2] - two[r2][c2]);
+      three[r3 + 1][c3] +=(one[r1 + 1][c1 + 1])*(two[r2 + 1][c2] - two[r2][c2]);
+      three[r3][c3] += (one[r1][c1] + one[r1 + 1][c1 + 1])*(two[r2][c2] * two[r2 + 1][c2 + 1]);
+      three[r3 + 1][c3 + 1] += (one[r1][c1] + one[r1 + 1][c1 + 1])*(two[r2][c2] * two[r2 + 1][c2 + 1]);
+      three[r3][c3] += (one[r1][c1 + 1] - one[r1 + 1][c1 + 1])*(two[r2 + 1][c2] + two[r2 + 1][c2 + 1]);
+      three[r3 + 1][c3 + 1] -= (one[r1][c1] - one[r1 + 1][c1])*(two[r2][c2] + two[r2][c2 + 1]);
+      return three;
+   } else {
+      int ***sums = (int***)calloc(2, sizeof(int**));
+      for (int i = 0; i < 2; i++){
+         sums[i] = (int **)calloc(new_d, sizeof(int*));
+         for (int j = 0; j < new_d; j++){
+            sums[i][j] = (int *)calloc(new_d, sizeof(int));
+         }
+      }
+
+
+      int **p = (int**)calloc(new_d, sizeof(int*));
+      for (int j = 0; j < new_d; j++){
+         p[j] = (int *)calloc(new_d, sizeof(int));   
+      }
+
+      for (int i = 0; i < 10; i++){
+         switch(i){
+            case 0: // f- h
+               matrixDestinationAddition(two, r2, c2 + new_d, two, r2 + new_d, c2 + new_d, sums[0], new_d, -1);
+               big_mult(one, sums[0], p, r1, c1, 0, 0, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3 , c3 + new_d, new_d, 1);
+               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, 1);
+               break;
+
+            case 1: // a + b
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               matrixDestinationAddition(one, r1, c1, one, r1, c1 + new_d, sums[0], new_d, 1);
+               big_mult(sums[0], two, p, 0, 0, r2 + new_d, c2 + new_d, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3 , c3 + new_d, new_d, 1);
+               matrixCorAddition(p, three, r3, c3, new_d, -1);
+               break;
+
+            case 2: //c + d
+               matrixDestinationAddition(one, r1 + new_d, c1, one, r1 + new_d, c1 + new_d, sums[0], new_d, 1);
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               big_mult(sums[0], two, p, 0, 0, r2, c2, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3 + new_d, c3, new_d, 1);
+               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
+               break;
+
+            case 3: //g - e
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               matrixDestinationAddition(two, r2 + new_d, c2, two, r2, c2, sums[0], new_d, -1);
+               big_mult(one, sums[0], p, r1 + new_d, c1 + new_d, 0, 0, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3, c3, new_d, 1);
+               matrixCorAddition(p, three, r3 + new_d, c3, new_d, 1);
+               break;
+
+            case 4: // a + d
+               matrixDestinationAddition(one, r1, c1, one, r1 + new_d, c1 + new_d, sums[0], new_d, 1);
+               break;
+
+            case 5: //e + h
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               matrixDestinationAddition(two, r2, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
+               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3, c3, new_d, 1);
+               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, 1);
+               break;
+
+            case 6: //b - d
+               matrixDestinationAddition(one, r1, c1 + new_d, one, r1 + new_d, c1 + new_d, sums[0], new_d, -1);
+               break;
+
+            case 7: // g + h
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               matrixDestinationAddition(two, r2 + new_d, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
+               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3, c3, new_d, 1);
+               break;
+
+            case 8: // a - c
+               matrixDestinationAddition(one, r1, c1, one, r1 + new_d, c1, sums[0], new_d, -1);
+               break;
+
+            default: //e + f
+               for (int j = 0; j < new_d; j++){
+                  memset(p[j], 0, sizeof(int) * new_d);
+               }
+               matrixDestinationAddition(two, r2, c2, two, r2, c2 + new_d, sums[1], new_d, 1);
+               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
+               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
+               break;
+         }
+      }
+      
+      for (int i = 0; i < 2; i++){
+         for (int j = 0; j < new_d; j++){
+               free(sums[i][j]);
+         }
+         free(sums[i]);
+      }
+      free(sums);
+
+      for (int j = 0; j < new_d; j++){
+         free(p[j]);
+      }
+      free(p);
+      
+      return three;
+   } 
+}   
+
+ 
+/*
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
    int new_d = dim/2;
    if (new_d == 1){
@@ -317,144 +447,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 
    }
 }
+*/
 
-
-int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
-   int new_d = dim/2;
-   if (new_d != 1) {
-      int ***sums = (int***)calloc(2, sizeof(int**));
-      for (int i = 0; i < 2; i++){
-         sums[i] = (int **)calloc(new_d, sizeof(int*));
-         for (int j = 0; j < new_d; j++){
-            sums[i][j] = (int *)calloc(new_d, sizeof(int));
-         }
-      }
-
-
-      int **p = (int**)calloc(new_d, sizeof(int*));
-      for (int j = 0; j < new_d; j++){
-         p[j] = (int *)calloc(new_d, sizeof(int));   
-      }
-
-      for (int i = 0; i < 10; i++){
-         switch(i){
-            case 0: // f- h
-               matrixDestinationAddition(two, r2, c2 + new_d, two, r2 + new_d, c2 + new_d, sums[0], new_d, -1);
-               big_mult(one, sums[0], p, r1, c1, 0, 0, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3 , c3 + new_d, new_d, 1);
-               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, 1);
-               break;
-
-            case 1: // a + b
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               matrixDestinationAddition(one, r1, c1, one, r1, c1 + new_d, sums[0], new_d, 1);
-               big_mult(sums[0], two, p, 0, 0, r2 + new_d, c2 + new_d, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3 , c3 + new_d, new_d, 1);
-               matrixCorAddition(p, three, r3, c3, new_d, -1);
-               break;
-
-            case 2: //c + d
-               matrixDestinationAddition(one, r1 + new_d, c1, one, r1 + new_d, c1 + new_d, sums[0], new_d, 1);
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               big_mult(sums[0], two, p, 0, 0, r2, c2, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3 + new_d, c3, new_d, 1);
-               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
-               break;
-
-            case 3: //g - e
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               matrixDestinationAddition(two, r2 + new_d, c2, two, r2, c2, sums[0], new_d, -1);
-               big_mult(one, sums[0], p, r1 + new_d, c1 + new_d, 0, 0, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3, c3, new_d, 1);
-               matrixCorAddition(p, three, r3 + new_d, c3, new_d, 1);
-               break;
-
-            case 4: // a + d
-               matrixDestinationAddition(one, r1, c1, one, r1 + new_d, c1 + new_d, sums[0], new_d, 1);
-               break;
-
-            case 5: //e + h
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               matrixDestinationAddition(two, r2, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
-               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3, c3, new_d, 1);
-               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, 1);
-               break;
-
-            case 6: //b - d
-               matrixDestinationAddition(one, r1, c1 + new_d, one, r1 + new_d, c1 + new_d, sums[0], new_d, -1);
-               break;
-
-            case 7: // g + h
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               matrixDestinationAddition(two, r2 + new_d, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
-               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3, c3, new_d, 1);
-               break;
-
-            case 8: // a - c
-               matrixDestinationAddition(one, r1, c1, one, r1 + new_d, c1, sums[0], new_d, -1);
-               break;
-
-            default: //e + f
-               for (int j = 0; j < new_d; j++){
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
-               matrixDestinationAddition(two, r2, c2, two, r2, c2 + new_d, sums[1], new_d, 1);
-               big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
-               matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
-               break;
-         }
-      }
-      
-      for (int i = 0; i < 2; i++){
-         for (int j = 0; j < new_d; j++){
-               free(sums[i][j]);
-         }
-         free(sums[i]);
-      }
-      free(sums);
-
-      for (int j = 0; j < new_d; j++){
-         free(p[j]);
-      }
-      free(p);
-      
-      return three;
-   } else {
-      // actually multiply & add to three
-      if (r1 >= real_dim || c1 >= real_dim || r2 >= real_dim || c2 >= real_dim){
-         three[r3][c3] = 0;
-         three[r3][c3 + 1]= 0;
-         three[r3 + 1][c3] = 0;
-         three[r3 + 1][c3 + 1] = 0;
-      } else {
-         int a = one[r1][c1], b = one[r1][c1 + 1], c = one[r1 + 1][c1], d = one[r1 + 1][c1 + 1];
-         int e = two[r2][c2], f = two[r2][c2 + 1], g = two[r2 + 1][c2], h = two[r2 + 1][c2 + 1];
-         int p1 = a*(f - h);
-         int p2 = (a + b)*h;
-         int p3 = (c + d)*e;
-         int p4 = d*(g - e);
-         int p5 = (a + d)*(e + h);
-         int p6 = (b - d)*(g + h);
-         int p7 = (a - c)*(e + f);
-         three[r3][c3] = p5 + p4 - p2 + p6;
-         three[r3][c3 + 1]= p1 + p2;
-         three[r3 + 1][c3] = p3 + p4;
-         three[r3 + 1][c3 + 1] = p1 + p5 - p3 - p7;
-      }
-      return three;
-   }
-}   
 
 
