@@ -10,6 +10,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 void diagonals(int **three, int dim);
 int **big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
+void program(int mode, int pad_dim, int dim, char* fname);
 
 int main(int argc, char** argv) {
    // Ensure correct usage
@@ -17,16 +18,71 @@ int main(int argc, char** argv) {
          printf("Usage: ./strassen 0 dimension inputfile \n");
          return 1;
    }
-   FILE *f = fopen(argv[3], "r");
+   // FILE *f = fopen(argv[3], "r");
+   // if (f == 0)
+   // {
+   //    //fopen returns 0, the NULL pointer, on failure
+   //    perror("Cannot open input file\n");
+   //    exit(-1);
+	// }
+   int dim = atoi(argv[2]);
+   int pad_dim = pow(2, ceil(log(dim)/ log(2)));
+   // char ch, buffer[10];
+   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   // int **one = (int **)calloc(pad_dim, sizeof(int *));
+   // int **two = (int **)calloc(pad_dim, sizeof(int *));
+   // int **three = (int **)calloc(pad_dim, sizeof(int *));
+   // for (int i = 0; i < pad_dim; i++){
+   //    one[i] = (int *)calloc(pad_dim, sizeof(int));
+   //    two[i] = (int *)calloc(pad_dim, sizeof(int));
+   //    three[i] = (int *)calloc(pad_dim, sizeof(int));
+   // }
+   
+   // makeTwoMatrices(f, dim, one, two);
+   // clock_t start, end;
+   
+   // start = clock();
+   // if (atoi(argv[1]) == 0){
+   //    printf("big mult");
+   //    big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
+   // } else {
+   //    standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   // }
+   // // big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
+   // // strassen(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
+   // standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   // end = clock();
+   // double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+   
+   // // printMatrices(three, pad_dim);
+   // // diagonals(three, dim);
+   // printf("TIME :%f \n", cpu_time_used);
+   // for (int i = 0; i < pad_dim; i ++){
+   //    free(one[i]);
+   //    free(two[i]);
+   //    free(three[i]);
+   // }
+
+   // free(one);
+   // free(two);
+   // free(three);
+   return 0;
+
+}
+
+void program(int mode, int pad_dim, int dim, char* fname){
+   FILE *f = fopen(fname, "r");
    if (f == 0)
    {
       //fopen returns 0, the NULL pointer, on failure
       perror("Cannot open input file\n");
       exit(-1);
 	}
-   int dim = atoi(argv[2]);
-   int pad_dim = pow(2, ceil(log(dim)/ log(2)));
-   char ch, buffer[10];
    int **one = (int **)calloc(pad_dim, sizeof(int *));
    int **two = (int **)calloc(pad_dim, sizeof(int *));
    int **three = (int **)calloc(pad_dim, sizeof(int *));
@@ -40,8 +96,8 @@ int main(int argc, char** argv) {
    clock_t start, end;
    
    start = clock();
-   if (atoi(argv[1]) == 0){
-      printf("big mult");
+   if (mode == 0){
+      // printf("big mult");
       big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    } else {
       standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
@@ -55,7 +111,7 @@ int main(int argc, char** argv) {
    
    // printMatrices(three, pad_dim);
    // diagonals(three, dim);
-   printf("TIME :%f \n", cpu_time_used);
+   printf("%f \n", cpu_time_used);
    for (int i = 0; i < pad_dim; i ++){
       free(one[i]);
       free(two[i]);
@@ -65,10 +121,7 @@ int main(int argc, char** argv) {
    free(one);
    free(two);
    free(three);
-   return 0;
-
 }
-
 
 void diagonals(int **three, int dim){
    for (int i = 0; i < dim; i++){
@@ -96,7 +149,7 @@ int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return one;
    } else if (r2 >= real_dim || c2 >= real_dim){
       return two;
-   } else if (dim < 10){
+   } else if (dim < 84){
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassenOpt(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
