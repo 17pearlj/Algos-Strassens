@@ -6,92 +6,114 @@
 #include <string.h>
 #include <time.h>
 
-#include "matrix.c"
-
 int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 void diagonals(int **three, int dim);
+void exec_fun(int mode, int pad_dim, int dim, char* fname);
 void graph(double p, int v_count, int **adj);
 double graph_triangles(int v_count, int **adj);
+void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positive);
+int makeTwoMatrices(FILE *f, int dim, int** one, int** two);
+void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive);
+int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim);
+void printMatrices(int **matrix, int dim);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
-void exec_fun(int mode, int pad_dim, int dim, char* fname);
+
 int crossover = 73;
 
 int main(int argc, char** argv) {
-   // Ensure correct usage
+   // ensure correct usage
    if (argc != 4) {
          printf("Usage: ./strassen 0 dimension inputfile \n");
          return 1;
    }
+   // execute the program, padding the matrix dimension as needed
    int dim = atoi(argv[2]);
    int pad_dim = pow(2, ceil(log(dim)/ log(2)));
    exec_fun(atoi(argv[1]), pad_dim, dim, argv[3]);
    return 0;
-
 }
 
 void exec_fun(int mode, int pad_dim, int dim, char* fname) {
+   // open file containing matrix
    FILE *f = fopen(fname, "r");
    if (f == 0)
    {
-      //fopen returns 0, the NULL pointer, on failure
+      // fopen returns 0, the NULL pointer, on failure
       perror("Cannot open input file\n");
       exit(-1);
-	}
-   int **one = (int **)calloc(pad_dim, sizeof(int *));
-   int **two = (int **)calloc(pad_dim, sizeof(int *));
-   int **three = (int **)calloc(pad_dim, sizeof(int *));
+ 	 }
+   // allocate space for the two matrices we're multiplying and a third for the product
+   int **one = (int **) calloc(pad_dim, sizeof(int *));
+   int **two = (int **) calloc(pad_dim, sizeof(int *));
+   int **three = (int **) calloc(pad_dim, sizeof(int *));
    for (int i = 0; i < pad_dim; i++) {
-      one[i] = (int *)calloc(pad_dim, sizeof(int));
-      two[i] = (int *)calloc(pad_dim, sizeof(int));
-      three[i] = (int *)calloc(pad_dim, sizeof(int));
+      one[i] = (int *) calloc(pad_dim, sizeof(int));
+      two[i] = (int *) calloc(pad_dim, sizeof(int));
+      three[i] = (int *) calloc(pad_dim, sizeof(int));
    }
 
    makeTwoMatrices(f, dim, one, two);
-   clock_t start, end;
 
+   // start timing
+   clock_t start, end;
    start = clock();
+
+   // mode 0 is default, others were used for development
    if (mode == 0) {
       big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    }
    else if (mode == 1) {
       standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
-   } else {
-       // Seed RNG with current time
+   }
+   else {
+       // seed RNG with current time
        srandom(time(NULL));
+       double p_val[5] = {0.01, 0.02, 0.03, 0.04, 0.05};
 
-       // calloc space for our graph
-       int v_count = 1024;
-       int *adj[v_count];
-       int *adj2[v_count];
-       int *adj3[v_count];
-       for (int i = 0; i < v_count; i++) {
-           adj[i] = (int *)calloc(v_count, sizeof(int));
-           adj2[i] = (int *)calloc(v_count, sizeof(int));
-           adj3[i] = (int *)calloc(v_count, sizeof(int));
-       }
+       // run five trials for each p_val
+       for (int a = 0; a < 5; a++) {
+           printf("5 trials, p_val: %f \n", p_val[a]);
+           for (int trial = 0; trial < 5; trial++) {
+               // calloc space for our graph
+               int v_count = 1024;
+               int *adj[v_count];
+               int *adj2[v_count];
+               int *adj3[v_count];
+               for (int i = 0; i < v_count; i++) {
+                   adj[i] = (int *)calloc(v_count, sizeof(int));
+                   adj2[i] = (int *)calloc(v_count, sizeof(int));
+                   adj3[i] = (int *)calloc(v_count, sizeof(int));
+               }
 
-       // add random edges to our adjacency matrix and print the graph
-       graph(0.01, v_count, adj);
+               // add random edges to adjacency matrix
+               graph(p_val[a], v_count, adj);
 
-       big_mult(adj, adj, adj2, 0, 0, 0, 0, 0, 0, v_count, v_count);
-       big_mult(adj2, adj, adj3, 0, 0, 0, 0, 0, 0, v_count, v_count);
+               // cube the adjacency matrix to calculate the number of triangles in our graph
+               big_mult(adj, adj, adj2, 0, 0, 0, 0, 0, 0, v_count, v_count);
+               big_mult(adj2, adj, adj3, 0, 0, 0, 0, 0, 0, v_count, v_count);
+               printf("num triangles: %f\n", graph_triangles(v_count, adj3));
 
-       printf("num triangles: %f\n", graph_triangles(v_count, adj3));
-
-       // free the space taken up by our graph
-       for (int i = 0; i < v_count; i++) {
-           free(adj[i]);
-           free(adj2[i]);
-           free(adj3[i]);
+               // free the space taken up by our matrices
+               for (int i = 0; i < v_count; i++) {
+                   free(adj[i]);
+                   free(adj2[i]);
+                   free(adj3[i]);
+               }
+           }
+           printf("\n");
        }
    }
    end = clock();
    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+   // print diagonals of our product matrix
    if (mode != 2) {
       diagonals(three, dim);
    }
-   for (int i = 0; i < pad_dim; i ++){
+
+   // free used memory
+   for (int i = 0; i < pad_dim; i ++) {
       free(one[i]);
       free(two[i]);
       free(three[i]);
@@ -102,27 +124,26 @@ void exec_fun(int mode, int pad_dim, int dim, char* fname) {
    free(three);
 }
 
+// print the diagonals in matrix three
 void diagonals(int **three, int dim) {
-   for (int i = 0; i < dim; i++){
+   for (int i = 0; i < dim; i++) {
       printf("%d \n", three[i][i]);
    }
-   printf("\n");
 }
 
 /*big multiplication algorithm
 RETURNS: a list of diagonal entries
 tasks:
-1) turn file into matrix form (if necessary? is this necessary?)
-2) based on n, either call strassens or call standard mult
-3) collect diagonals
+1) based on n, either call strassens or call standard mult
+2) collect diagonals
 */
 int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim) {
-   // check dimensions, if under crossover point, call standard, else call strassens
+   // check dimensions, if under crossover point, call standard, else call strassen
    if (r1 >= real_dim || c1 >= real_dim) {
       return one;
    } else if (r2 >= real_dim || c2 >= real_dim) {
       return two;
-   } else if (dim < crossover){
+   } else if (dim < crossover) {
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassen(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
@@ -136,14 +157,14 @@ tasks:
 */
 int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim) {
 
-    // we need to make copies of the matrices so we can line up the indices
-    int **temp1 = (int **)calloc(dim, sizeof(int *));
-    int **temp2 = (int **)calloc(dim, sizeof(int *));
-    int **temp3 = (int **)calloc(dim, sizeof(int *));
+    // allocate space for 0-indexed copies of the matrices
+    int **temp1 = (int **) calloc(dim, sizeof(int *));
+    int **temp2 = (int **) calloc(dim, sizeof(int *));
+    int **temp3 = (int **) calloc(dim, sizeof(int *));
     for (int i = 0; i < dim; i++) {
-       temp1[i] = (int *)calloc(dim, sizeof(int));
-       temp2[i] = (int *)calloc(dim, sizeof(int));
-       temp3[i] = (int *)calloc(dim, sizeof(int));
+       temp1[i] = (int *) calloc(dim, sizeof(int));
+       temp2[i] = (int *) calloc(dim, sizeof(int));
+       temp3[i] = (int *) calloc(dim, sizeof(int));
     }
 
     // make 0-indexed copies of matrices one and two
@@ -158,23 +179,24 @@ int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, i
         }
     }
 
-    // multiply using the 0-indexed copies
+    // multiply the 0-indexed copies of one and two
     for (int i = 0; i < dim; i++) {
         for (int j = 0; j < dim; j++) {
             for (int k = 0; k < dim; k++) {
+                // store the product in 0-indexed matrix three
                 temp3[i][j] += (temp1[i][k] * temp2[k][j]);
             }
         }
     }
 
-    // copy the product into matrix 3 at the appropriate indices
+    // copy the 0-indexed product into matrix three at the appropriate indices
     for (int i = 0; i < dim; i++) {
         for (int j = 0; j < dim; j++) {
             three[i + r3][j + c3] = temp3[i][j];
         }
     }
 
-    // free our temporary 0-indexed copies
+    // free used memory
     for (int i = 0; i < dim; i ++) {
        free(temp1[i]);
        free(temp2[i]);
@@ -185,9 +207,6 @@ int** standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, i
     free(temp3);
     return three;
 }
-
-
-
 
 /*strassens algorithm
 RETURNS: int**
@@ -222,11 +241,11 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
          }
       }
 
-
       int **p = (int**)calloc(new_d, sizeof(int*));
       for (int j = 0; j < new_d; j++) {
          p[j] = (int *)calloc(new_d, sizeof(int));
       }
+
       for (int i = 0; i < 10; i++) {
          switch(i) {
             case 0: // f- h
@@ -326,7 +345,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 }
 
 
-// 2D graph, 1024 vertices, each edge has a probability p of being generated
+// generate 2D graph, 1024 vertices, each edge has a probability p of being generated
 void graph(double p, int v_count, int **adj) {
     for (int i = 0; i < v_count; i++) {
         for (int j = i; j < v_count; j++) {
@@ -346,10 +365,100 @@ void graph(double p, int v_count, int **adj) {
     }
 }
 
+// calculate the number of triangles in graph represented by adj matrix
 double graph_triangles(int v_count, int **adj) {
+    // return the sum of the diagonal divided by 6
     double sum = 0;
     for (int i = 0; i < v_count; i++) {
         sum += adj[i][i];
     }
     return (sum / 6.);
+}
+
+int makeTwoMatrices(FILE *f, int dim, int** one, int** two) {
+		char ch, buffer[11];
+		int i = 0, ar = 0, row = 0, col = 0, counter = 0;
+		// while both arrays not read
+		while (counter < (2*(pow(dim, 2.)))) {
+				// reads char
+				ch = fgetc(f);
+			  // if EOF is encountered, error
+				if(ch == EOF) {
+						perror("File is too short");
+						exit(-1);
+						break;
+				}
+				else if(ch == '\n') {
+						switch (ar) {
+								case 0:
+					      		one[row][col] = atoi(buffer);
+										break;
+								default: two[row][col] = atoi(buffer);
+						}
+						col++;
+						if (col == dim) {
+								col = 0;
+								row++;
+								if (row == dim) {
+										ar++;
+										row = 0;
+								}
+						}
+			      bzero(buffer, 10);
+						i = 0;
+			      counter++;
+						continue;
+				}
+				else {
+						buffer[i] = ch;
+						i++;
+				}
+		}
+		return 0;
+}
+
+
+void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positive) {
+    for(int r = 0; r < dim; r++) {
+				for (int c = 0; c < dim; c++) {
+		            two[r2 + r][c2 + c] += (one[r][c]*positive);
+				}
+		}
+}
+
+void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive) {
+    for(int r = 0; r < dim; r++) {
+				for (int c = 0; c < dim; c++) {
+		    		three[r][c] = one[r + r1][c + c1] + (two[r + r2][c + c2]*positive);
+				}
+		}
+}
+
+int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim) {
+    for (int i = 0; i < p_len; i++) {
+        if (i == a) {
+            matrixCorAddition(p[i], third, r3, c3, dim, pos_a);
+        }
+				else if (i == b) {
+            matrixCorAddition(p[i], third, r3, c3, dim, pos_b);
+        }
+				else if (i == c) {
+            matrixCorAddition(p[i], third, r3, c3, dim, pos_c);
+        }
+				else if (i == d) {
+            matrixCorAddition(p[i], third, r3, c3, dim, pos_d);
+        }
+    }
+    return third;
+}
+
+void printMatrices(int **matrix, int dim) {
+		printf("\n");
+    for(int r = 0; r < dim; r++) {
+      	printf("[ ");
+				for (int c = 0; c < dim; c++) {
+						printf("%d, ", matrix[r][c]);
+				}
+		    printf("] \n");
+		}
 }
