@@ -40,6 +40,12 @@ int main(int argc, char** argv) {
    clock_t start, end;
    
    start = clock();
+   if (atoi(argv[1]) == 0){
+      printf("big mult");
+      big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
+   } else {
+      standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   }
    // big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    // strassen(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
@@ -90,7 +96,7 @@ int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return one;
    } else if (r2 >= real_dim || c2 >= real_dim){
       return two;
-   } else if (dim < 70){
+   } else if (dim < 10){
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassenOpt(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);

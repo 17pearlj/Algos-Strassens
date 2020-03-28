@@ -14,7 +14,7 @@ void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positi
 
 
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two){
-	char ch, buffer[10];
+	char ch, buffer[11];
 	int i = 0, ar = 0, row = 0, col = 0, counter = 0;
 		// while both arrays not read
 	while (counter < (2*(pow(dim, 2.)))){
