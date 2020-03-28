@@ -14,7 +14,8 @@ void graph(double p, int v_count, int **adj);
 double graph_triangles(int v_count, int **adj);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
-void program(int mode, int pad_dim, int dim, char* fname);
+void exec_fun(int mode, int pad_dim, int dim, char* fname);
+int crossover = 73;
 
 int main(int argc, char** argv) {
    // Ensure correct usage
@@ -24,12 +25,12 @@ int main(int argc, char** argv) {
    }
    int dim = atoi(argv[2]);
    int pad_dim = pow(2, ceil(log(dim)/ log(2)));
-   program(atoi(argv[1]), pad_dim, dim, argv[3]);
+   exec_fun(atoi(argv[1]), pad_dim, dim, argv[3]);
    return 0;
 
 }
 
-void program(int mode, int pad_dim, int dim, char* fname) {
+void exec_fun(int mode, int pad_dim, int dim, char* fname) {
    FILE *f = fopen(fname, "r");
    if (f == 0)
    {
@@ -54,7 +55,6 @@ void program(int mode, int pad_dim, int dim, char* fname) {
       big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    }
    else if (mode == 1) {
-      printf("standard mult ");
       standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
    } else {
        // Seed RNG with current time
@@ -88,7 +88,7 @@ void program(int mode, int pad_dim, int dim, char* fname) {
    }
    end = clock();
    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-   if (mode == 0) {
+   if (mode != 2) {
       diagonals(three, dim);
    }
    for (int i = 0; i < pad_dim; i ++){
@@ -122,7 +122,7 @@ int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return one;
    } else if (r2 >= real_dim || c2 >= real_dim) {
       return two;
-   } else if (dim < 84){
+   } else if (dim < crossover){
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassen(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
