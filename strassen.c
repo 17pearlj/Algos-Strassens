@@ -1,14 +1,20 @@
+#include <float.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "matrix.c"
 #include <time.h>
 
+//#include "graph.c"
+#include "matrix.c"
+
+int **big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
+void diagonals(int **three, int dim);
+void graph(double p, int v_count, int **adj);
+void print_graph(int v_count, int **adj);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
-void diagonals(int **three, int dim);
-int **big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 
 int main(int argc, char** argv) {
@@ -35,24 +41,46 @@ int main(int argc, char** argv) {
       two[i] = (int *)calloc(pad_dim, sizeof(int));
       three[i] = (int *)calloc(pad_dim, sizeof(int));
    }
-   
+
    makeTwoMatrices(f, dim, one, two);
    clock_t start, end;
-   
+
    start = clock();
    if (atoi(argv[1]) == 0){
-      printf("big mult");
+      printf("big mult ");
       big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
-   } else {
+   }
+   else if (atoi(argv[1]) == 1) {
+      printf("standard mult ");
       standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   }
+   else {
+       // Seed RNG with current time
+       srandom(time(NULL));
+
+       // calloc space for our graph
+       int v_count = 1024;
+       int *adj[v_count];
+       for (int i = 0; i < v_count; i++){
+           adj[i] = (int *)calloc(v_count, sizeof(int));
+       }
+
+       // add random edges to our adjacency matrix and print the graph
+       graph(0.01, v_count, adj);
+       //print_graph(v_count, adj);
+
+       // free the space taken up by our graph
+       for (int i = 0; i < v_count; i++){
+           free(adj[i]);
+       }
    }
    // big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
    // strassen(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
-   standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
+   //standard_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim);
    end = clock();
    double cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-   
+
    // printMatrices(three, pad_dim);
    // diagonals(three, dim);
    printf("TIME :%f \n", cpu_time_used);
@@ -73,7 +101,7 @@ int main(int argc, char** argv) {
 void diagonals(int **three, int dim){
    for (int i = 0; i < dim; i++){
       printf("%d \n", three[i][i]);
-   } 
+   }
    printf("\n");
 }
 
@@ -100,7 +128,7 @@ int** big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return standard_mult(one, two, three, r1, c1, r2, c2, r3, c3, dim);
    } else {
       return strassenOpt(one, two, three, r1, c1, r2, c2, r3, c3, real_dim, dim);
-   }   
+   }
 }
 
 /*standard matrix multiplication
@@ -198,7 +226,7 @@ int **strassenOpt1(int **one, int **two, int **three, int r1, int c1, int r2, in
 
       int **p = (int**)calloc(new_d, sizeof(int*));
       for (int j = 0; j < new_d; j++){
-         p[j] = (int *)calloc(new_d, sizeof(int));   
+         p[j] = (int *)calloc(new_d, sizeof(int));
       }
 
       for (int i = 0; i < 10; i++){
@@ -281,7 +309,7 @@ int **strassenOpt1(int **one, int **two, int **three, int r1, int c1, int r2, in
                break;
          }
       }
-      
+
       for (int i = 0; i < 2; i++){
          for (int j = 0; j < new_d; j++){
                free(sums[i][j]);
@@ -294,10 +322,10 @@ int **strassenOpt1(int **one, int **two, int **three, int r1, int c1, int r2, in
          free(p[j]);
       }
       free(p);
-      
+
       return three;
-   } 
-}   
+   }
+}
 
 int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
    int new_d = dim/2;
@@ -327,7 +355,7 @@ int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int
 
       int **p = (int**)calloc(new_d, sizeof(int*));
       for (int j = 0; j < new_d; j++){
-         p[j] = (int *)calloc(new_d, sizeof(int));   
+         p[j] = (int *)calloc(new_d, sizeof(int));
       }
       for (int i = 0; i < 10; i++){
          switch(i){
@@ -409,7 +437,7 @@ int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int
                break;
          }
       }
-      
+
       for (int i = 0; i < 2; i++){
          for (int j = 0; j < new_d; j++){
                free(sums[i][j]);
@@ -422,10 +450,10 @@ int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int
          free(p[j]);
       }
       free(p);
-      
+
       return three;
-   } 
-}  
+   }
+}
 /*
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim){
    int new_d = dim/2;
@@ -454,7 +482,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       return three;
    } else {
       bool all_zeroes = false, one_zeroes = false, two_zeroes = false;
-      
+
       if (r1 >= real_dim || c1 >= real_dim){
          one_zeroes = true;
       }
@@ -478,7 +506,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                case 0: // f- h
                   if (!two_zeroes){
                      matrixDestinationAddition(two, r2, c2 + new_d, two, r2 + new_d, c2 + new_d, sums[i], new_d, -1);
-                     
+
                   }
                   break;
 
@@ -492,24 +520,24 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                case 2: //c + d
                   if (!one_zeroes){
                      matrixDestinationAddition(one, r1 + new_d, c1, one, r1 + new_d, c1 + new_d, sums[i], new_d, 1);
-                     
+
                   }
                   break;
 
                case 3: //g - e
-                  if (!two_zeroes){ 
+                  if (!two_zeroes){
                      matrixDestinationAddition(two, r2 + new_d, c2, two, r2, c2, sums[i], new_d, -1);
                   }
                   break;
 
                case 4: // a + d
-                  if (!one_zeroes){ 
+                  if (!one_zeroes){
                      matrixDestinationAddition(one, r1, c1, one, r1 + new_d, c1 + new_d, sums[i], new_d, 1);
                   }
                   break;
 
                case 5: //e + h
-                  if (!two_zeroes){ 
+                  if (!two_zeroes){
                      matrixDestinationAddition(two, r2, c2, two, r2 + new_d, c2 + new_d, sums[i], new_d, 1);
                   }
                   break;
@@ -521,7 +549,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                   break;
 
                case 7: // g + h
-                  if (!two_zeroes){ 
+                  if (!two_zeroes){
                      matrixDestinationAddition(two, r2 + new_d, c2, two, r2 + new_d, c2 + new_d, sums[i], new_d, 1);
                   }
                   break;
@@ -539,7 +567,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                   break;
             }
          }
-         
+
          int ***p = (int ***)calloc(7, sizeof(int**));
          for (int i = 0; i < 7; i++){
             p[i] = (int**)calloc(new_d, sizeof(int*));
@@ -547,8 +575,8 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                p[i][j] = (int *)calloc(new_d, sizeof(int));
             }
          }
- 
-         p[0] = big_mult(one, sums[0], p[0], r1, c1, 0, 0, 0, 0, real_dim, new_d);  
+
+         p[0] = big_mult(one, sums[0], p[0], r1, c1, 0, 0, 0, 0, real_dim, new_d);
          p[1] = big_mult(sums[1], two, p[1], 0, 0, r2 + new_d, c2 + new_d, 0, 0, real_dim, new_d);
          p[2] = big_mult(sums[2], two, p[2], 0, 0, r2, c2, 0, 0, real_dim, new_d);
          p[3] = big_mult(one, sums[3], p[3], r1 + new_d, c1 + new_d, 0, 0, 0, 0, real_dim, new_d);
@@ -559,7 +587,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
          matrixThirdsAddition(0, 1, -1, -1, 1, 1, 1, 1, p, 7, three, r3, c3 + new_d, new_d);
          matrixThirdsAddition(2, 3, -1, -1, 1, 1, 1, 1, p, 7, three, r3 + new_d, c3, new_d);
          matrixThirdsAddition(0, 4, 2, 6, 1, 1, -1, -1, p, 7, three, r3 + new_d, c3 + new_d, new_d);
-      
+
          for (int i = 0; i < 10; i++){
             for (int j = 0; j < new_d; j++){
                   free(sums[i][j]);
@@ -581,5 +609,31 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
 }
 */
 
+// 2D graph, 1024 vertices, each edge has a probability p of being generated
+void graph(double p, int v_count, int **adj) {
+    for (int i = 0; i < v_count; i++) {
+        for (int j = i; j < v_count; j++) {
+            // ignore reflexive edges
+            if (j == i) {
+                continue;
+            }
+            // add each edge with probability p
+            else if (((double)random())/((double)(RAND_MAX)) <= p) {
+                adj[i][j] = 1;
+                adj[j][i] = 1;
+            }
+            else {
+                continue;
+            }
+        }
+    }
+}
 
-
+void print_graph(int v_count, int **adj) {
+    for (int i = 0; i < v_count; i++) {
+        for (int j = 0; j < v_count; j++) {
+            printf("%i ", adj[i][j]);
+        }
+        printf("\n");
+    }
+}
