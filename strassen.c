@@ -6,13 +6,12 @@
 #include <string.h>
 #include <time.h>
 
-//#include "graph.c"
 #include "matrix.c"
 
 int **big_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 void diagonals(int **three, int dim);
 void graph(double p, int v_count, int **adj);
-void print_graph(int v_count, int **adj);
+double graph_triangles(int v_count, int **adj);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 int **strassenOpt(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
@@ -61,17 +60,27 @@ int main(int argc, char** argv) {
        // calloc space for our graph
        int v_count = 1024;
        int *adj[v_count];
+       int *adj2[v_count];
+       int *adj3[v_count];
        for (int i = 0; i < v_count; i++) {
            adj[i] = (int *)calloc(v_count, sizeof(int));
+           adj2[i] = (int *)calloc(v_count, sizeof(int));
+           adj3[i] = (int *)calloc(v_count, sizeof(int));
        }
 
        // add random edges to our adjacency matrix and print the graph
        graph(0.01, v_count, adj);
-       //print_graph(v_count, adj);
+
+       big_mult(adj, adj, adj2, 0, 0, 0, 0, 0, 0, v_count, v_count);
+       big_mult(adj2, adj, adj3, 0, 0, 0, 0, 0, 0, v_count, v_count);
+
+       printf("num triangles: %f\n", graph_triangles(v_count, adj3));
 
        // free the space taken up by our graph
        for (int i = 0; i < v_count; i++) {
            free(adj[i]);
+           free(adj2[i]);
+           free(adj3[i]);
        }
    }
    // big_mult(one, two, three, 0, 0, 0, 0, 0, 0, dim, pad_dim);
@@ -629,11 +638,10 @@ void graph(double p, int v_count, int **adj) {
     }
 }
 
-void print_graph(int v_count, int **adj) {
+double graph_triangles(int v_count, int **adj) {
+    double sum = 0;
     for (int i = 0; i < v_count; i++) {
-        for (int j = 0; j < v_count; j++) {
-            printf("%i ", adj[i][j]);
-        }
-        printf("\n");
+        sum += adj[i][i];
     }
+    return (sum / 6.);
 }
