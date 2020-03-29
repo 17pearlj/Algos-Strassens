@@ -1,6 +1,4 @@
-#include <float.h>
 #include <math.h>
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -14,8 +12,6 @@ double graph_triangles(int v_count, int **adj);
 void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positive);
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two);
 void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive);
-int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim);
-void printMatrices(int **matrix, int dim);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 
@@ -41,6 +37,7 @@ void exec_fun(int mode, int pad_dim, int dim, char* fname) {
    {
       // fopen returns 0, the NULL pointer, on failure
       perror("Cannot open input file\n");
+      fclose(f);
       exit(-1);
  	 }
    // allocate space for the two matrices we're multiplying and a third for the product
@@ -122,6 +119,8 @@ void exec_fun(int mode, int pad_dim, int dim, char* fname) {
    free(one);
    free(two);
    free(three);
+
+   fclose(f);
 }
 
 // print the diagonals in matrix three
@@ -377,6 +376,8 @@ double graph_triangles(int v_count, int **adj) {
 
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two) {
 		char ch, buffer[11];
+    ch = '\0';
+    memset(buffer, '\0', sizeof(buffer));
 		int i = 0, ar = 0, row = 0, col = 0, counter = 0;
 		// while both arrays not read
 		while (counter < (2*(pow(dim, 2.)))) {
@@ -431,34 +432,5 @@ void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int
 				for (int c = 0; c < dim; c++) {
 		    		three[r][c] = one[r + r1][c + c1] + (two[r + r2][c + c2]*positive);
 				}
-		}
-}
-
-int** matrixThirdsAddition(int a, int b, int c, int d, int pos_a, int pos_b, int pos_c, int pos_d, int ***p, int p_len, int **third, int r3, int c3, int dim) {
-    for (int i = 0; i < p_len; i++) {
-        if (i == a) {
-            matrixCorAddition(p[i], third, r3, c3, dim, pos_a);
-        }
-				else if (i == b) {
-            matrixCorAddition(p[i], third, r3, c3, dim, pos_b);
-        }
-				else if (i == c) {
-            matrixCorAddition(p[i], third, r3, c3, dim, pos_c);
-        }
-				else if (i == d) {
-            matrixCorAddition(p[i], third, r3, c3, dim, pos_d);
-        }
-    }
-    return third;
-}
-
-void printMatrices(int **matrix, int dim) {
-		printf("\n");
-    for(int r = 0; r < dim; r++) {
-      	printf("[ ");
-				for (int c = 0; c < dim; c++) {
-						printf("%d, ", matrix[r][c]);
-				}
-		    printf("] \n");
 		}
 }
