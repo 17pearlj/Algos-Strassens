@@ -12,6 +12,7 @@ double graph_triangles(int v_count, int **adj);
 void matrixCorAddition(int **one, int **two, int r2, int c2, int dim, int positive);
 int makeTwoMatrices(FILE *f, int dim, int** one, int** two);
 void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int c2, int**three, int dim, int positive);
+void memset2D(int new_d, int **p);
 int **standard_mult(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int dim);
 int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2, int r3, int c3, int real_dim, int dim);
 
@@ -78,9 +79,9 @@ void exec_fun(int mode, int pad_dim, int dim, char* fname) {
                int *adj2[v_count];
                int *adj3[v_count];
                for (int i = 0; i < v_count; i++) {
-                   adj[i] = (int *)calloc(v_count, sizeof(int));
-                   adj2[i] = (int *)calloc(v_count, sizeof(int));
-                   adj3[i] = (int *)calloc(v_count, sizeof(int));
+                   adj[i] = (int *) calloc(v_count, sizeof(int));
+                   adj2[i] = (int *) calloc(v_count, sizeof(int));
+                   adj3[i] = (int *) calloc(v_count, sizeof(int));
                }
 
                // add random edges to adjacency matrix
@@ -232,17 +233,17 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
       three[r3 + 1][c3 + 1] -= (one[r1][c1] - one[r1 + 1][c1])*(two[r2][c2] + two[r2][c2 + 1]);
       return three;
    } else {
-      int ***sums = (int***)calloc(2, sizeof(int**));
+      int ***sums = (int***) calloc(2, sizeof(int**));
       for (int i = 0; i < 2; i++) {
-         sums[i] = (int **)calloc(new_d, sizeof(int*));
+         sums[i] = (int **) calloc(new_d, sizeof(int*));
          for (int j = 0; j < new_d; j++) {
-            sums[i][j] = (int *)calloc(new_d, sizeof(int));
+            sums[i][j] = (int *) calloc(new_d, sizeof(int));
          }
       }
 
-      int **p = (int**)calloc(new_d, sizeof(int*));
+      int **p = (int**) calloc(new_d, sizeof(int*));
       for (int j = 0; j < new_d; j++) {
-         p[j] = (int *)calloc(new_d, sizeof(int));
+         p[j] = (int *) calloc(new_d, sizeof(int));
       }
 
       for (int i = 0; i < 10; i++) {
@@ -255,9 +256,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                break;
 
             case 1: // a + b
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
+               memset2D(new_d, p);
                matrixDestinationAddition(one, r1, c1, one, r1, c1 + new_d, sums[0], new_d, 1);
                big_mult(sums[0], two, p, 0, 0, r2 + new_d, c2 + new_d, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3 , c3 + new_d, new_d, 1);
@@ -265,19 +264,15 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                break;
 
             case 2: //c + d
+               memset2D(new_d, p);
                matrixDestinationAddition(one, r1 + new_d, c1, one, r1 + new_d, c1 + new_d, sums[0], new_d, 1);
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
                big_mult(sums[0], two, p, 0, 0, r2, c2, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3 + new_d, c3, new_d, 1);
                matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
                break;
 
             case 3: //g - e
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
+               memset2D(new_d, p);
                matrixDestinationAddition(two, r2 + new_d, c2, two, r2, c2, sums[0], new_d, -1);
                big_mult(one, sums[0], p, r1 + new_d, c1 + new_d, 0, 0, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3, c3, new_d, 1);
@@ -289,9 +284,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                break;
 
             case 5: //e + h
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
+               memset2D(new_d, p);
                matrixDestinationAddition(two, r2, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
                big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3, c3, new_d, 1);
@@ -303,9 +296,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                break;
 
             case 7: // g + h
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
+               memset2D(new_d, p);
                matrixDestinationAddition(two, r2 + new_d, c2, two, r2 + new_d, c2 + new_d, sums[1], new_d, 1);
                big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3, c3, new_d, 1);
@@ -316,9 +307,7 @@ int **strassen(int **one, int **two, int **three, int r1, int c1, int r2, int c2
                break;
 
             default: //e + f
-               for (int j = 0; j < new_d; j++) {
-                  memset(p[j], 0, sizeof(int) * new_d);
-               }
+               memset2D(new_d, p);
                matrixDestinationAddition(two, r2, c2, two, r2, c2 + new_d, sums[1], new_d, 1);
                big_mult(sums[0], sums[1], p, 0, 0, 0, 0, 0, 0, real_dim, new_d);
                matrixCorAddition(p, three, r3 + new_d, c3 + new_d, new_d, -1);
@@ -433,4 +422,10 @@ void matrixDestinationAddition(int **one, int r1, int c1, int **two, int r2, int
 		    		three[r][c] = one[r + r1][c + c1] + (two[r + r2][c + c2]*positive);
 				}
 		}
+}
+
+void memset2D(int new_d, int **p) {
+    for (int j = 0; j < new_d; j++) {
+       memset(p[j], 0, sizeof(int) * new_d);
+    }
 }
